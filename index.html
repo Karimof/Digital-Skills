@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Test va Sertifikat Tizimi</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root { --primary: #2563eb; --success: #059669; --bg: #f3f4f6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
+        h2 { color: #1f2937; margin-bottom: 1.5rem; }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #d1d5db; font-size: 16px; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        button:hover { background: #1d4ed8; }
+        .quiz-area { display: none; text-align: left; }
+        .question { font-weight: 600; margin-bottom: 10px; display: block; }
+        .option { display: block; padding: 8px; background: #f9fafb; margin: 5px 0; border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb; }
+        .option:hover { background: #eff6ff; }
+        .result-area { display: none; }
+        .status-pass { color: var(--success); font-weight: bold; font-size: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="main-box">
+    <div id="login-step">
+        <h2>Sun'iy Intellekt Testi</h2>
+        <p>Sertifikat olish uchun ism-familyangizni kiriting va testdan o'ting.</p>
+        <input type="text" id="student-name" placeholder="Ism va Familyangiz" required>
+        <button onclick="startQuiz()">Testni boshlash</button>
+    </div>
+
+    <div id="quiz-step" class="quiz-area">
+        <div id="question-container"></div>
+        <button onclick="checkResults()" style="margin-top: 20px;">Natijani ko'rish</button>
+    </div>
+
+    <div id="result-step" class="result-area">
+        <h2 id="result-text"></h2>
+        <p id="score-text"></p>
+        <div id="download-zone">
+            <button onclick="generatePDF()" style="background: var(--success);">Sertifikatni yuklab olish (PDF)</button>
+        </div>
+        <button onclick="location.reload()" style="background: #6b7280; margin-top: 10px;">Qayta topshirish</button>
+    </div>
+</div>
+
+<script>
+    const { jsPDF } = window.jspdf;
+
+    const questions = [
+        { q: "AI nima?", a: ["Sun'iy Intellekt", "Avtomatik Inobat", "Asosiy Identifikator"], correct: 0 },
+        { q: "Mashinali o'rganish (ML) qaysi soha qismi?", a: ["Kimyo", "Sun'iy Intellekt", "Biologiya"], correct: 1 },
+        { q: "Neyron tarmoqlar nima asosida yaratilgan?", a: ["Inson miyasi", "O'simlik tomiri", "Kosmik kemalar"], correct: 0 }
+    ];
+
+    let currentStudent = "";
+
+    function startQuiz() {
+        currentStudent = document.getElementById('student-name').value;
+        if (!currentStudent) return alert("Iltimos, ismingizni yozing!");
+        
+        document.getElementById('login-step').style.display = 'none';
+        document.getElementById('quiz-step').style.display = 'block';
+
+        let html = "";
+        questions.forEach((item, index) => {
+            html += `<span class="question">${index+1}. ${item.q}</span>`;
+            item.a.forEach((opt, optIdx) => {
+                html += `<label class="option"><input type="radio" name="q${index}" value="${optIdx}"> ${opt}</label>`;
+            });
+        });
+        document.getElementById('question-container').innerHTML = html;
+    }
+
+    function checkResults() {
+        let score = 0;
+        questions.forEach((_, index) => {
+            const selected = document.querySelector(`input[name="q${index}"]:checked`);
+            if (selected && parseInt(selected.value) === questions[index].correct) {
+                score++;
+            }
+        });
+
+        document.getElementById('quiz-step').style.display = 'none';
+        document.getElementById('result-step').style.display = 'block';
+
+        if (score >= 2) { // 3 tadan 2 ta to'g'ri bo'lsa o'tadi
+            document.getElementById('result-text').innerText = "Tabriklaymiz!";
+            document.getElementById('result-text').className = "status-pass";
+            document.getElementById('score-text').innerText = `Siz ${questions.length} tadan ${score} ta ball to'pladingiz.`;
+        } else {
+            document.getElementById('result-text').innerText = "Afsus, o'ta olmadingiz.";
+            document.getElementById('score-text').innerText = "Sertifikat olish uchun kamida 2 ta to'g'ri javob kerak.";
+            document.getElementById('download-zone').style.display = 'none';
+        }
+    }
+
+    async function generatePDF() {
+        const doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        // Sertifikat foni (rasm nomi to'g'ri bo'lishi shart)
+        const img = new Image();
+        img.src = 'sertifikat_foni.jpg'; 
+        
+        img.onload = function() {
+            // Rasmni A4 o'lchamida chizish (297x210 mm)
+            doc.addImage(img, 'JPEG', 0, 0, 297, 210);
+            
+            // Ismni yozish
+            doc.setFont("times", "bold");
+            doc.setFontSize(45);
+            doc.setTextColor(60, 60, 60); // To'q kulrang
+            
+            // Ismni markazlashtirish (A4 markazi 148.5 mm)
+            doc.text(currentStudent, 148.5, 105, { align: 'center' });
+            
+            // Sertifikatni saqlash
+            doc.save(`Sertifikat_${currentStudent}.pdf`);
+        };
+        
+        img.onerror = function() {
+            alert("Sertifikat foni topilmadi! Iltimos, 'sertifikat_foni.jpg' fayli mavjudligini tekshiring.");
+        }
+    }
+</script>
+
+</body>
+</html>
