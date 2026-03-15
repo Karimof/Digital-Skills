@@ -3,130 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Test va Sertifikat Tizimi</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <title>AI Certification Portal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --success: #059669; --bg: #f3f4f6; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
-        h2 { color: #1f2937; margin-bottom: 1.5rem; }
-        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #d1d5db; font-size: 16px; box-sizing: border-box; }
-        button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; }
-        button:hover { background: #1d4ed8; }
-        .quiz-area { display: none; text-align: left; }
-        .question { font-weight: 600; margin-bottom: 10px; display: block; }
-        .option { display: block; padding: 8px; background: #f9fafb; margin: 5px 0; border-radius: 6px; cursor: pointer; border: 1px solid #e5e7eb; }
-        .option:hover { background: #eff6ff; }
-        .result-area { display: none; }
-        .status-pass { color: var(--success); font-weight: bold; font-size: 20px; }
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --dark: #1f2937;
+            --glass: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        h2 { color: var(--primary); margin-top: 0; }
+        p { color: #4b5563; line-height: 1.5; }
+
+        .input-group { margin: 1.5rem 0; text-align: left; }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+        /* Test qismi */
+        #step-2, #step-3 { display: none; text-align: left; }
+        .q-card { background: #f9fafb; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #e5e7eb; }
+        .option { display: block; margin: 8px 0; cursor: pointer; }
+
+        /* SERTIFIKAT SHABLONI (YASHIRIN) */
+        #certificate-template {
+            position: absolute;
+            left: -9999px; /* Ekranda ko'rinmaydi */
+            width: 1000px;
+            height: 707px;
+            background-image: url('sertifikat_foni.jpg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            display: block;
+        }
+
+        /* Ism joylashuvi */
+        .cert-name {
+            position: absolute;
+            top: 380px; /* Rasmingizdagi ism chizig'iga qarab moslang */
+            width: 100%;
+            text-align: center;
+            font-size: 52px;
+            font-weight: bold;
+            color: #444;
+            font-family: 'Times New Roman', serif;
+        }
+
+        /* Sana joylashuvi */
+        .cert-date {
+            position: absolute;
+            bottom: 65px; /* Rasmingizdagi pastki qismga qarab moslang */
+            left: 200px;  /* Chap burchakdan masofa */
+            font-size: 20px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .score-box { font-size: 40px; font-weight: bold; color: var(--success); text-align: center; margin: 15px 0; }
     </style>
 </head>
 <body>
 
-<div class="container" id="main-box">
-    <div id="login-step">
-        <h2>Sun'iy Intellekt Testi</h2>
-        <p>Sertifikat olish uchun ism-familyangizni kiriting va testdan o'ting.</p>
-        <input type="text" id="student-name" placeholder="Ism va Familyangiz" required>
-        <button onclick="startQuiz()">Testni boshlash</button>
-    </div>
-
-    <div id="quiz-step" class="quiz-area">
-        <div id="question-container"></div>
-        <button onclick="checkResults()" style="margin-top: 20px;">Natijani ko'rish</button>
-    </div>
-
-    <div id="result-step" class="result-area">
-        <h2 id="result-text"></h2>
-        <p id="score-text"></p>
-        <div id="download-zone">
-            <button onclick="generatePDF()" style="background: var(--success);">Sertifikatni yuklab olish (PDF)</button>
+<div class="container">
+    <div id="step-1">
+        <h2>AI Test Markazi</h2>
+        <p>Ism-familyangizni kiriting va sertifikat uchun testni boshlang.</p>
+        <div class="input-group">
+            <input type="text" id="userName" placeholder="F.I.SH.">
         </div>
-        <button onclick="location.reload()" style="background: #6b7280; margin-top: 10px;">Qayta topshirish</button>
+        <button onclick="startQuiz()">Boshlash</button>
+    </div>
+
+    <div id="step-2">
+        <div id="quiz-area"></div>
+        <button onclick="finishQuiz()" style="background: var(--dark);">Natijani ko'rish</button>
+    </div>
+
+    <div id="step-3">
+        <h2 id="status-title" style="text-align: center;">Natija</h2>
+        <div class="score-box" id="final-score">0/3</div>
+        <p id="status-msg" style="text-align: center;"></p>
+        <div id="download-btn-area">
+            <button onclick="generatePNG()" style="background: var(--success);">Sertifikatni yuklash (PNG)</button>
+        </div>
+        <button onclick="location.reload()" style="margin-top: 10px; background: #6b7280;">Qayta urinish</button>
     </div>
 </div>
 
-<script>
-    const { jsPDF } = window.jspdf;
+<div id="certificate-template">
+    <div id="display-name" class="cert-name">Ism Familya</div>
+    <div id="display-date" class="cert-date">16.03.2026</div>
+</div>
 
-    const questions = [
-        { q: "AI nima?", a: ["Sun'iy Intellekt", "Avtomatik Inobat", "Asosiy Identifikator"], correct: 0 },
-        { q: "Mashinali o'rganish (ML) qaysi soha qismi?", a: ["Kimyo", "Sun'iy Intellekt", "Biologiya"], correct: 1 },
-        { q: "Neyron tarmoqlar nima asosida yaratilgan?", a: ["Inson miyasi", "O'simlik tomiri", "Kosmik kemalar"], correct: 0 }
+<script>
+    const quizData = [
+        { q: "Sun'iy intellekt inson miyasini simulyatsiya qiladimi?", a: ["Ha", "Yo'q", "Faqat ba'zida"], c: 0 },
+        { q: "ML qisqartmasining ma'nosi nima?", a: ["Memory Loss", "Machine Learning", "Main Link"], c: 1 },
+        { q: "ChatGPT qaysi kompaniya mahsuloti?", a: ["Google", "Meta", "OpenAI"], c: 2 }
     ];
 
-    let currentStudent = "";
+    let user = "";
 
     function startQuiz() {
-        currentStudent = document.getElementById('student-name').value;
-        if (!currentStudent) return alert("Iltimos, ismingizni yozing!");
-        
-        document.getElementById('login-step').style.display = 'none';
-        document.getElementById('quiz-step').style.display = 'block';
+        user = document.getElementById('userName').value.trim();
+        if(user.length < 3) return alert("Iltimos, ismingizni yozing!");
+        document.getElementById('step-1').style.display = 'none';
+        document.getElementById('step-2').style.display = 'block';
 
         let html = "";
-        questions.forEach((item, index) => {
-            html += `<span class="question">${index+1}. ${item.q}</span>`;
-            item.a.forEach((opt, optIdx) => {
-                html += `<label class="option"><input type="radio" name="q${index}" value="${optIdx}"> ${opt}</label>`;
+        quizData.forEach((item, i) => {
+            html += `<div class="q-card"><strong>${i+1}. ${item.q}</strong>`;
+            item.a.forEach((opt, oi) => {
+                html += `<label class="option"><input type="radio" name="q${i}" value="${oi}"> ${opt}</label>`;
             });
+            html += `</div>`;
         });
-        document.getElementById('question-container').innerHTML = html;
+        document.getElementById('quiz-area').innerHTML = html;
     }
 
-    function checkResults() {
+    function finishQuiz() {
         let score = 0;
-        questions.forEach((_, index) => {
-            const selected = document.querySelector(`input[name="q${index}"]:checked`);
-            if (selected && parseInt(selected.value) === questions[index].correct) {
-                score++;
-            }
+        quizData.forEach((item, i) => {
+            const selected = document.querySelector(`input[name="q${i}"]:checked`);
+            if(selected && parseInt(selected.value) === item.c) score++;
         });
 
-        document.getElementById('quiz-step').style.display = 'none';
-        document.getElementById('result-step').style.display = 'block';
+        document.getElementById('step-2').style.display = 'none';
+        document.getElementById('step-3').style.display = 'block';
+        document.getElementById('final-score').innerText = `${score} / ${quizData.length}`;
 
-        if (score >= 2) { // 3 tadan 2 ta to'g'ri bo'lsa o'tadi
-            document.getElementById('result-text').innerText = "Tabriklaymiz!";
-            document.getElementById('result-text').className = "status-pass";
-            document.getElementById('score-text').innerText = `Siz ${questions.length} tadan ${score} ta ball to'pladingiz.`;
+        if(score >= 2) {
+            document.getElementById('status-title').innerText = "Tabriklaymiz!";
+            document.getElementById('status-msg').innerText = "Testdan muvaffaqiyatli o'tdingiz!";
+            
+            // Sertifikat ma'lumotlarini tayyorlash
+            document.getElementById('display-name').innerText = user;
+            
+            // Bugungi sanani olish
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('uz-UZ', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            document.getElementById('display-date').innerText = formattedDate;
         } else {
-            document.getElementById('result-text').innerText = "Afsus, o'ta olmadingiz.";
-            document.getElementById('score-text').innerText = "Sertifikat olish uchun kamida 2 ta to'g'ri javob kerak.";
-            document.getElementById('download-zone').style.display = 'none';
+            document.getElementById('status-title').innerText = "Afsus...";
+            document.getElementById('status-msg').innerText = "Ball yetarli emas. Kamida 2 ta to'g'ri javob kerak.";
+            document.getElementById('download-btn-area').style.display = 'none';
         }
     }
 
-    async function generatePDF() {
-        const doc = new jsPDF({
-            orientation: 'landscape',
-            unit: 'mm',
-            format: 'a4'
+    function generatePNG() {
+        const area = document.getElementById('certificate-template');
+        html2canvas(area, {
+            useCORS: true,
+            scale: 2 // Sifatni 2 barobar oshiradi
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Sertifikat_${user}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
         });
-
-        // Sertifikat foni (rasm nomi to'g'ri bo'lishi shart)
-        const img = new Image();
-        img.src = 'sertifikat_foni.jpg'; 
-        
-        img.onload = function() {
-            // Rasmni A4 o'lchamida chizish (297x210 mm)
-            doc.addImage(img, 'JPEG', 0, 0, 297, 210);
-            
-            // Ismni yozish
-            doc.setFont("times", "bold");
-            doc.setFontSize(45);
-            doc.setTextColor(60, 60, 60); // To'q kulrang
-            
-            // Ismni markazlashtirish (A4 markazi 148.5 mm)
-            doc.text(currentStudent, 148.5, 105, { align: 'center' });
-            
-            // Sertifikatni saqlash
-            doc.save(`Sertifikat_${currentStudent}.pdf`);
-        };
-        
-        img.onerror = function() {
-            alert("Sertifikat foni topilmadi! Iltimos, 'sertifikat_foni.jpg' fayli mavjudligini tekshiring.");
-        }
     }
 </script>
 
