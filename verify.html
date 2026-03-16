@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>Sertifikatni tekshirish</h2>
+    <input type="text" id="checkID" placeholder="ID raqamini kiriting (masalan: AI-123456)">
+    <button onclick="verify()">Tekshirish</button>
+    <p id="result"></p>
+
+    <script>
+        async function verify() {
+            const id = document.getElementById('checkID').value;
+            // Google Apps Script-ga "GET" so'rovini yuborish orqali bazadan qidirish
+            const response = await fetch("https://script.google.com/macros/s/AKfycbwukOyDA3-HJipLuTcc1rhsVQluzW7BkWReiCxnUckuKHF0KycR4N9e8qyv9zbllP3m/exec?id=" + id);
+            const data = await response.text();
+            document.getElementById('result').innerText = data;
+        }
+    </script>
+</body>
+</html>
